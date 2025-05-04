@@ -16,7 +16,8 @@ import transformers.utils.chat_template_utils as hf_chat_utils
 # yapf: disable
 from openai.types.chat import (ChatCompletionAssistantMessageParam,
                                ChatCompletionContentPartImageParam,
-                               ChatCompletionContentPartInputAudioParam)
+                               ChatCompletionContentPartInputAudioParam,
+                               ChatCompletionContentPartAudioParam)
 from openai.types.chat import (
     ChatCompletionContentPartParam as OpenAIChatCompletionContentPartParam)
 from openai.types.chat import (ChatCompletionContentPartRefusalParam,
@@ -117,6 +118,52 @@ class CustomChatCompletionContentSimpleVideoParam(TypedDict, total=False):
     video_url: Required[str]
 
 
+# Define direct multi-modal content types
+class DirectImage(TypedDict, total=False):
+    """Direct image content representation for multi-modal inputs."""
+    data: Required[Union[object, bytes, str]]
+    """The image data. Can be a PIL.Image object, bytes, or base64 string."""
+
+
+class DirectAudio(TypedDict, total=False):
+    """Direct audio content representation for multi-modal inputs."""
+    data: Required[Union[object, bytes, str]]
+    """The audio data. Can be an audio object, bytes, or base64 string."""
+
+
+class DirectVideo(TypedDict, total=False):
+    """Direct video content representation for multi-modal inputs."""
+    data: Required[Union[object, bytes, str]]
+    """The video data. Can be a video object, bytes, or base64 string."""
+
+
+class ChatCompletionContentPartDirectImageParam(TypedDict, total=False):
+    """Content part containing direct image data."""
+    image: Required[Union[DirectImage, object, bytes, str]]
+    """The image data as a PIL.Image object, bytes, or base64 string."""
+
+    type: Required[Literal["image"]]
+    """The type of the content part."""
+
+
+class ChatCompletionContentPartDirectAudioParam(TypedDict, total=False):
+    """Content part containing direct audio data."""
+    audio: Required[Union[DirectAudio, object, bytes, or str]]
+    """The audio data as an audio object, bytes, or base64 string."""
+
+    type: Required[Literal["audio"]]
+    """The type of the content part."""
+
+
+class ChatCompletionContentPartDirectVideoParam(TypedDict, total=False):
+    """Content part containing direct video data."""
+    video: Required[Union[DirectVideo, object, bytes, or str]]
+    """The video data as a video object, bytes, or base64 string."""
+
+    type: Required[Literal["video"]]
+    """The type of the content part."""
+
+
 ChatCompletionContentPartParam: TypeAlias = Union[
     OpenAIChatCompletionContentPartParam, ChatCompletionContentPartAudioParam,
     ChatCompletionContentPartInputAudioParam,
@@ -124,7 +171,10 @@ ChatCompletionContentPartParam: TypeAlias = Union[
     CustomChatCompletionContentSimpleImageParam,
     ChatCompletionContentPartImageEmbedsParam,
     CustomChatCompletionContentSimpleAudioParam,
-    CustomChatCompletionContentSimpleVideoParam, str]
+    CustomChatCompletionContentSimpleVideoParam,
+    ChatCompletionContentPartDirectImageParam,
+    ChatCompletionContentPartDirectAudioParam,
+    ChatCompletionContentPartDirectVideoParam, str]
 
 
 class CustomChatCompletionMessageParam(TypedDict, total=False):
@@ -910,6 +960,13 @@ MM_PARSER_MAP: dict[
     lambda part: _RefusalParser(part).get("refusal", None),
     "video_url":
     lambda part: _VideoParser(part).get("video_url", {}).get("url", None),
+    # Direct multi-modal content types
+    "image":
+    lambda part: part.get("image", None),
+    "audio":
+    lambda part: part.get("audio", None),
+    "video":
+    lambda part: part.get("video", None),
 }
 
 
@@ -1258,3 +1315,4 @@ def apply_mistral_chat_template(
             "An error occurred in `mistral_common` while applying chat "
             "template")
         raise ValueError from e
+
