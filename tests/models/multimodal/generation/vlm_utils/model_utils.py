@@ -3,11 +3,11 @@
 for manipulating the input / output of HF & vLLM test runners, which are
 typically specific to a small subset of models.
 """
-import re
 import types
 from pathlib import PosixPath
 from typing import Optional, Union
 
+import regex as re
 import torch
 from PIL.Image import Image
 from transformers import (AutoConfig, AutoTokenizer, BatchFeature,
@@ -234,6 +234,18 @@ def minimax_vl_01_hf_output(hf_output: RunnerOutput,
     output_ids, output_str, out_logprobs = hf_output
     if output_str.endswith("<end_of_sentence>"):
         output_str = output_str.split("<end_of_sentence>")[0]
+    return output_ids, output_str, out_logprobs
+
+
+def ultravox_trunc_hf_output(hf_output: RunnerOutput,
+                             model: str) -> RunnerOutput:
+    output_ids, output_str, out_logprobs = hf_output
+
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    eos_token_id = tokenizer.eos_token_id
+    eos_token = tokenizer.decode(eos_token_id)
+    if output_str.endswith(eos_token):
+        output_str = output_str.split(eos_token)[0]
     return output_ids, output_str, out_logprobs
 
 
